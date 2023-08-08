@@ -9,12 +9,12 @@ class JawabanLainnya extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'pertanyaan_id',
+        'jawaban_id',
         'jawaban'
     ];
 
-    public function pertanyaan()
+    public function jawaban()
     {
-        return $this->hasMany('App\Models\Pertanyaan');
+        return $this->hasOne('App\Models\Jawaban');
     }
 }

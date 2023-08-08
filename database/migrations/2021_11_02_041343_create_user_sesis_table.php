@@ -18,6 +18,7 @@ class CreateUserSesisTable extends Migration
             $table->unsignedBigInteger('user_id');
             $table->date('sesi_tanggal');
             $table->enum('sesi_status', ['0', '1'])->default('0');
+            $table->year('sesi_tahun_pengisian');
 
             $table->timestamps();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

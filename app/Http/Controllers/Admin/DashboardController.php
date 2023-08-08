@@ -111,11 +111,14 @@ class DashboardController extends Controller
         // return $request->all();
         $pertanyaanId = $request->pertanyaanId;
         $usersId = json_decode($request->usersId);
+        $tahunId = json_decode($request->filter);
         $users = [];
         if ($request->filter == "-") {
             $users = $usersId;
         } else {
-            $userTahunAjar = Jawaban::where(['pertanyaan_id' => 2, 'jawaban' => $request->filter])->whereIn('user_id', $usersId)->get();
+            $userTahunAjar = Jawaban::where(['pertanyaan_id' => 2])->whereIn('jawaban', $tahunId)->whereIn('user_id', $usersId)->get();
+
+            // $userTahunAjar = Jawaban::where(['pertanyaan_id' => 2, 'jawaban' => $request->filter])->whereIn('user_id', $usersId)->get();
             foreach ($userTahunAjar as $item) {
                 $users[] = $item->user_id;
             }

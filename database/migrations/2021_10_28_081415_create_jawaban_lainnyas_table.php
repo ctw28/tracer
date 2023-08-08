@@ -15,11 +15,11 @@ class CreateJawabanLainnyasTable extends Migration
     {
         Schema::create('jawaban_lainnyas', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('pertanyaan_id');
+            $table->unsignedBigInteger('jawaban_id');
             $table->string('jawaban');
 
             $table->timestamps();
-            $table->foreign('pertanyaan_id')->references('id')->on('pertanyaans')->onDelete('cascade');
+            $table->foreign('jawaban_id')->references('id')->on('jawabans')->onDelete('cascade');
         });
     }
 

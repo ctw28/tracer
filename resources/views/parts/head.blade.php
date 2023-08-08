@@ -43,3 +43,4 @@
 
 <link rel="stylesheet" href="{{asset('/')}}css/main.css" />
 <script src="{{asset('/')}}js/base/loader.js"></script>
+@yield('css')

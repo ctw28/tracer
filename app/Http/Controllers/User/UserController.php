@@ -86,6 +86,11 @@ class UserController extends Controller
     }
     public function showPertanyaan($bagianId)
     {
+        // $check = Jawaban::with(['jawabanLainnya'])->where([
+        //     'user_id' => session()->get('userData')->id,
+        //     'pertanyaan_id' => '1',
+        // ])->get();
+        // return $check[0]->jawabanLainnya->jawaban;
         $data['title'] = "Kuisioner Alumni";
         $data['iddata'] = session('iddata');
 
@@ -161,9 +166,13 @@ class UserController extends Controller
                     <input onclick="showTextInput(event, ' . $row->id . ')" class="form-check-input" type="checkbox" name="input[' . $row->id . '][]" id="input' . $row->id . '" value="lainnya" ' . $checked . '/>
                     <label class="form-check-label" for="input' . $row->id . '">Lainnya</label>
                   </div>';
-                    $check = JawabanLainnya::where('pertanyaan_id', $row->id)->get();
-                    if (count($check) > 0)
-                        $content .= "<input required name='lainnya[" . $row->id . "]' id='lainnya_" . $row->id . "' type='text' class='form-control' value='" . $check[0]->jawaban . "'>";
+                    $check = Jawaban::with(['jawabanLainnya'])->where([
+                        'user_id' => session()->get('userData')->id,
+                        'pertanyaan_id' => $row->id,
+                        'jawaban' => 'lainnya',
+                    ])->get();
+                    if (!empty($check[0]->jawabanLainnya))
+                        $content .= "<input required name='lainnya[" . $row->id . "]' id='lainnya_" . $row->id . "' type='text' class='form-control' value='" . $check[0]->jawabanLainnya->jawaban . "'>";
                 }
                 $content .= '</div>';
                 $row->form = $content;
@@ -182,9 +191,13 @@ class UserController extends Controller
                     if (count($dataJawaban) > 0)
                         $checked = ($jawaban[0]->jawaban == "lainnya") ? "selected" : '';
                     $content .= '<option value="lainnya" ' . $checked . '>Lainnya</option>';
-                    $check = JawabanLainnya::where('pertanyaan_id', $row->id)->get();
-                    if (count($check) > 0)
-                        $content .= "<input required name='lainnya[" . $row->id . "]' id='lainnya_" . $row->id . "' type='text' class='form-control' value='" . $check[0]->jawaban . "'>";
+                    $check = Jawaban::with(['jawabanLainnya'])->where([
+                        'user_id' => session()->get('userData')->id,
+                        'pertanyaan_id' => $row->id,
+                        'jawaban' => 'lainnya',
+                    ])->get();
+                    if (!empty($check[0]->jawabanLainnya))
+                        $content .= "<input required name='lainnya[" . $row->id . "]' id='lainnya_" . $row->id . "' type='text' class='form-control' value='" . $check[0]->jawabanLainnya->jawaban . "'>";
                 }
                 $content .= '</select>';
                 $content .= '</div>';
@@ -208,9 +221,14 @@ class UserController extends Controller
                         <input onclick="showTextInput(event, ' . $row->id . ')" class="form-check-input" type="radio" name="input[' . $row->id . ']" id="inputlainnya' . $row->id . '" value="lainnya" ' . $checked . '/>
                         <label class="form-check-label" for="inputlainnya' . $row->id . '">Lainnya</label>
                     </div>';
-                    $check = JawabanLainnya::where('pertanyaan_id', $row->id)->get();
-                    if (count($check) > 0)
-                        $content .= "<input required name='lainnya[" . $row->id . "]' id='lainnya_" . $row->id . "' type='text' class='form-control' value='" . $check[0]->jawaban . "'>";
+                    // $check = JawabanLainnya::where('pertanyaan_id', $row->id)->get();
+                    $check = Jawaban::with(['jawabanLainnya'])->where([
+                        'user_id' => session()->get('userData')->id,
+                        'pertanyaan_id' => $row->id,
+                        'jawaban' => 'lainnya',
+                    ])->get();
+                    if (!empty($check[0]->jawabanLainnya))
+                        $content .= "<input required name='lainnya[" . $row->id . "]' id='lainnya_" . $row->id . "' type='text' class='form-control' value='" . $check[0]->jawabanLainnya->jawaban . "'>";
                 }
                 $content .= '</div>';
 
@@ -233,9 +251,8 @@ class UserController extends Controller
 
     public function storeJawaban(Request $request, $bagianId)
     {
-        // return $request->all();
+        return $request->all();
         try {
-            //code...
             if ($request->awal == 1) {
                 $userSesi = UserSesi::where(['user_id' => session()->get('userData')->id, 'sesi_status' => "1"])->count();
                 if ($userSesi == 0) {
@@ -254,14 +271,16 @@ class UserController extends Controller
                 $userSesi->sesi_status = "1";
                 $userSesi->save();
             }
+
             foreach ($request->input as $key => $value) {
-                if (gettype($value) == "array") {
-                    Jawaban::where([
+                if (gettype($value) == "array") {  //ini untuk jawaban yang pilihan lebih dari satu
+                    $jawaban = Jawaban::where([
                         'user_id' => session()->get('userData')->id,
                         'pertanyaan_id' => $key
-                    ])->delete();
-                    foreach ($value as $row) {
-                        Jawaban::insert(
+                    ])->delete(); //hapus dulu semua jawaban yang sudah ada dari pertanyaan ini supaya tidak duplikat karena mau diinsert ulang dan jawaban lainnya terhapus memang jg
+
+                    foreach ($value as $row) { // ini diinsertmi semua pilihan2 yang sudah dipilih
+                        Jawaban::create( // kenapa nda pakai update or create karena bisa jadi sudah nda sama pilihannya, jadi nda bisa diupdate
                             [
                                 'user_id' => session()->get('userData')->id,
                                 'pertanyaan_id' => $key,
@@ -269,8 +288,8 @@ class UserController extends Controller
                             ]
                         );
                     }
-                } else {
-                    Jawaban::updateOrCreate(
+                } else { // ini untuk simpan jawaban selain yang bukan pilihan lebih dari satu seperti text biasa, pilihan salah satu, dll
+                    $jawaban = Jawaban::updateOrCreate(
                         [
                             'user_id' => session()->get('userData')->id,
                             'pertanyaan_id' => $key
@@ -279,27 +298,23 @@ class UserController extends Controller
                             'jawaban' => $value
                         ]
                     );
+                    JawabanLainnya::where('jawaban_id', $jawaban->id)->delete(); //ini dihapus dulu jawaban lainnya kalau memang dia punya jawaban "lainnnya" nanti diinsert baru lagi
                 }
-                JawabanLainnya::where('pertanyaan_id', $key)->delete();
-            }
-            if (isset($request->lainnya)) {
-                foreach ($request->lainnya as $key => $value) {
-                    $lainnya = Pertanyaan::where(['id' => $key, 'lainnya' => "1"])->get();
-
-                    if (count($lainnya) > 0) {
-                        JawabanLainnya::where('pertanyaan_id', $key)->delete();
-                        JawabanLainnya::insert(
+                if (isset($request->lainnya)) { // ini untuk cek apakah ada jawaban "lainnya" yang diisi
+                    if (isset($request->lainnya[$key]) && !empty($request->lainnya[$key])) { // cek ada atau tidak yang khusus pertanyaan ini punya jawaban "lainnya"
+                        $jawaban = Jawaban::where([
+                            'user_id' => session()->get('userData')->id,
+                            'pertanyaan_id' => $key,
+                            'jawaban' => 'lainnya'
+                        ])->first();
+                        JawabanLainnya::create(
                             [
-                                'pertanyaan_id' => $key,
-                                'jawaban' => $value
+                                'jawaban_id' => $jawaban->id,
+                                'jawaban' => $request->lainnya[$key]
                             ]
                         );
-                    } else {
-                        JawabanLainnya::where('pertanyaan_id', $key)->delete();
                     }
                 }
-            } else {
-                JawabanLainnya::where('pertanyaan_id', $key)->delete();
             }
 
             $direct = BagianDirect::where('step_id', $bagianId)->first();

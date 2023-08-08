@@ -23,4 +23,9 @@ class Jawaban extends Model
     {
         return $this->belongsTo('App\Models\User');
     }
+
+    public function jawabanLainnya()
+    {
+        return $this->hasOne('App\Models\JawabanLainnya');
+    }
 }

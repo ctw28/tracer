@@ -1,6 +1,11 @@
 @extends('template')
 
+@section('css')
+<link rel="stylesheet" href="{{asset('/')}}css/vendor/select2.min.css" />
+<link rel="stylesheet" href="{{asset('/')}}css/vendor/select2-bootstrap4.min.css" />
+@endsection
 @section('content')
+
 
 <!-- Form Row Start -->
 <!-- Text Content Start -->
@@ -36,12 +41,13 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select" id="tahun-lulus">
+                    <select multiple="multiple" class="form-select" id="tahun-lulus">
                     </select>
                 </div>
                 <div class="col-md-3">
                     <button class="btn btn-warning" id="filter">Filter</button>
                 </div>
+
             </div>
             <!-- <h2>Rekap</h2> -->
 
@@ -104,7 +110,8 @@
 @endsection
 @section('js')
 <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-
+<script src="{{asset('/')}}js/vendor/select2.full.min.js"></script>
+<script src="{{asset('/')}}js/forms/controls.select2.js"></script>
 <script>
     let bagian = document.querySelector("#bagian")
 
@@ -166,7 +173,7 @@
                     body: dataForm
                 })
                 responseMessage = await response.json()
-                console.log(pertanyaan.options[pertanyaan.selectedIndex].value);
+                // console.log(pertanyaan.options[pertanyaan.selectedIndex].value);
                 const resultTemplate = document.querySelector("#resultTemplate")
                 const result = resultTemplate.content.cloneNode(true);
                 resultShow.appendChild(result)
@@ -274,7 +281,7 @@
             response = await fetch('{{route("admin.get.filter")}}')
             responseMessage = await response.json()
             let fragment = document.createDocumentFragment();
-
+            console.log(responseMessage);
             responseMessage.forEach(function(data, i) {
                 let option = document.createElement('option');
                 option.innerText = data.pilihan_jawaban
@@ -320,11 +327,12 @@
         });
     });
     document.querySelector("#filter").addEventListener('click', async function() {
+
         const pertanyaanId = pertanyaan.options[pertanyaan.selectedIndex].value
         let dataWhere = {};
         if (fakultas.options[fakultas.selectedIndex].value != "" && fakultas.options[fakultas.selectedIndex].value != "semua")
             dataWhere["tb_mstprodi.idfakultas"] = fakultas.options[fakultas.selectedIndex].value;
-        if (prodi.options[prodi.selectedIndex].value != "" && fakultas.options[fakultas.selectedIndex].value != "semua")
+        if (prodi.options[prodi.selectedIndex].value != "" && prodi.options[prodi.selectedIndex].value != "semua")
             dataWhere["tb_data.idprodi"] = prodi.options[prodi.selectedIndex].value;
 
         let dataId = []
@@ -341,6 +349,7 @@
             body: dataSend
         })
         responseMessage = await response.json()
+        // console.log(responseMessage);
         dataId = []
         responseMessage.data.forEach(function(data) {
             dataId.push(data.iddata);
@@ -362,10 +371,20 @@
         dataSend = new FormData()
         dataSend.append('pertanyaanId', pertanyaanId)
         dataSend.append('usersId', JSON.stringify(usersid))
-        if (tahunLulus.options[tahunLulus.selectedIndex].value == "" || tahunLulus.options[tahunLulus.selectedIndex].value == "semua")
+        if (tahunLulus.options[tahunLulus.selectedIndex].value == "" || tahunLulus.options[tahunLulus.selectedIndex].value == "semua") {
+
             dataSend.append('filter', '-')
-        else
-            dataSend.append('filter', tahunLulus.options[tahunLulus.selectedIndex].value)
+        } else {
+            var selected = [];
+            for (var option of document.getElementById('tahun-lulus').options) {
+                if (option.selected) {
+                    selected.push(option.value);
+                }
+            }
+            console.log(selected);
+            // return;
+            dataSend.append('filter', JSON.stringify(selected))
+        }
 
 
         //mulai dari sini bedami untuk yang angka
@@ -478,6 +497,7 @@
         let optionPilih = document.createElement('option');
         optionPilih.innerText = `Pilih ${text}`
         optionPilih.value = ""
+        optionPilih.selected = true
         pilihan.appendChild(optionPilih)
         let optionSemua = document.createElement('option');
         optionSemua.innerText = `Semua ${text}`
